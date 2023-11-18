@@ -26,16 +26,6 @@ def double_conv(input, output):
     return conv
 
 
-def (input, output):
-    # print(input)
-    conv = nn.Sequential(
-        nn.Conv2d(input, output, kernel_size=3),
-        nn.ReLU(inplace=True),
-        nn.Conv2d(output, output, kernel_size=3),
-        nn.ReLU(inplace=True)
-    )
-    return conv
-
 
 class UNet(nn.Module):
     def __init__(self):
@@ -53,7 +43,33 @@ class UNet(nn.Module):
                                             kernel_size=2,
                                             stride=2)
         
-        self.up_conv1 = double_conv
+        self.up_conv1 = double_conv(1024, 512)
+        
+        self.up_trans2 = nn.ConvTranspose2d(in_channels=512,
+                                            out_channels=256, 
+                                            kernel_size=2,
+                                            stride=2)
+        
+        self.up_conv2 = double_conv(512, 256)
+        
+        self.up_trans3 = nn.ConvTranspose2d(in_channels=256,
+                                            out_channels=128, 
+                                            kernel_size=2,
+                                            stride=2)
+        
+        self.up_conv3 = double_conv(256, 128)
+        
+        self.up_trans4 = nn.ConvTranspose2d(in_channels=128,
+                                            out_channels=64, 
+                                            kernel_size=2,
+                                            stride=2)
+        
+        self.up_conv4 = double_conv(128, 64)
+        
+        self.out = nn.Conv2d(in_channels=64,
+                             out_channels=2,    # increase number of channels based on number of objects to segment
+                             kernel_size=1)
+        
     
     def forward(self, image):
         # bs, c, h, w
@@ -72,15 +88,30 @@ class UNet(nn.Module):
         
         # decoder
         x = self.up_trans1(x9)
-        
         x7_cropped = crop_to_target_size(x7, x)
+        x = self.up_conv1(torch.cat([x, x7_cropped], 1))
         
+        x = self.up_trans2(x)
+        
+        x5_cropped = crop_to_target_size(x5, x)
+        x = self.up_conv2(torch.cat([x, x5_cropped], 1))
+        
+        x = self.up_trans3(x)
+        
+        x3_cropped = crop_to_target_size(x3, x)
+        x = self.up_conv3(torch.cat([x, x3_cropped], 1))
+        
+        
+        x = self.up_trans4(x)
+        
+        x1_cropped = crop_to_target_size(x1, x)
+        x = self.up_conv4(torch.cat([x, x1_cropped], 1))
+        
+        x = self.out(x)
         
         print(x.size())
-        print(x7.size())
-        print(x7_cropped.size())
-
-        print(x9.size())
+        return x 
+        
         # return "hello"
         
 # 
