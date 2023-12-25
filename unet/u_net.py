@@ -13,8 +13,6 @@ def crop_to_target_size(tensor, target_tensor):
 
     return tensor[:, :, delta:tensor_size-delta, delta:tensor_size-delta]
 
-
-
 def double_conv(input, output):
     # print(input)
     conv = nn.Sequential(
@@ -24,8 +22,6 @@ def double_conv(input, output):
         nn.ReLU(inplace=True)
     )
     return conv
-
-
 
 class UNet(nn.Module):
     def __init__(self):
